@@ -11,6 +11,11 @@ public class Redirect {
   public Redirect() {
   }
 
+  public Redirect(String url, Integer userId) {
+    this.url = url;
+    this.userId = userId;
+  }
+
   public Integer getId() {
     return id;
   }

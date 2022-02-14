@@ -32,8 +32,6 @@ public class LinkRepositoryImpl implements LinkRepository {
     @Override
     @Transactional
     public Link save(Link link, int userId) {
-        //ValidationUtil.validate(link);
-
         MapSqlParameterSource map = new MapSqlParameterSource()
                 .addValue("id", link.getId())
                 .addValue("original_url", link.getOriginalUrl())
@@ -51,19 +49,6 @@ public class LinkRepositoryImpl implements LinkRepository {
     @Transactional
     public boolean deleteByShortLink(String shortLink, int userId) {
         return jdbcTemplate.update("DELETE FROM links WHERE short_url=? AND user_id=?", shortLink, userId) != 0;
-    }
-
-    @Override
-    public Link get(int id, int userId) {
-        List<Link> links = jdbcTemplate.query(
-                "SELECT * FROM links WHERE id = ? AND user_id = ?", ROW_MAPPER, id, userId);
-        return DataAccessUtils.singleResult(links);
-    }
-
-    @Override
-    public List<Link> getAll(int userId) {
-        return jdbcTemplate.query(
-                "SELECT * FROM links WHERE user_id=?", ROW_MAPPER, userId);
     }
 
     @Override

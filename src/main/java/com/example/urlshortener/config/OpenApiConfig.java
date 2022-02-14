@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Configuration;
     info = @Info(
         title = "REST API documentation",
         version = "1.0",
-        description = "Application YourBestLunch (graduation project for the course <a href='https://javaops.ru/view/topjava'> TopJava</a>)",
+        description = "Application UrlShortener",
         contact = @Contact(url = "https://github.com/vlsolodilov", name = "Vladislav Solodilov", email = "vlsolodilov@gmail.com")
     ),
     security = @SecurityRequirement(name = "Authorization")

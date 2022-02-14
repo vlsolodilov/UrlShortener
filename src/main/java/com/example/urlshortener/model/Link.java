@@ -13,9 +13,7 @@ public class Link {
   public Link() {
   }
 
-  public Link(Integer id, String originalUrl, String shortUrl, LocalDateTime createdTo,
-      Integer countRedirect) {
-    this.id = id;
+  public Link(String originalUrl, String shortUrl, LocalDateTime createdTo) {
     this.originalUrl = originalUrl;
     this.shortUrl = shortUrl;
     this.createdTo = createdTo;

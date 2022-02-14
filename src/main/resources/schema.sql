@@ -15,7 +15,6 @@ CREATE TABLE links
     original_url    VARCHAR(255) NOT NULL,
     short_url       VARCHAR(255) NOT NULL,
     created_to      TIMESTAMP            ,
-    count_redirect  INTEGER      NOT NULL,
     user_id         INTEGER      NOT NULL,
     FOREIGN KEY (user_id) REFERENCES USERS (id) ON DELETE CASCADE
 );

@@ -1,6 +1,7 @@
 package com.example.urlshortener.repository;
 
 import com.example.urlshortener.model.Redirect;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
@@ -34,11 +35,9 @@ public class RedirectRepositoryImpl implements RedirectRepository{
   @Override
   @Transactional
   public Redirect save(Redirect redirect) {
-    //ValidationUtil.validate(redirect);
-
     MapSqlParameterSource map = new MapSqlParameterSource()
         .addValue("id", redirect.getId())
-        .addValue("time_redirect", redirect.getTimeRedirect())
+        .addValue("time_redirect", LocalDateTime.now())
         .addValue("url", redirect.getUrl())
         .addValue("user_id", redirect.getUserId());
 

@@ -1,12 +1,14 @@
 package com.example.urlshortener.web;
 
 import com.example.urlshortener.model.Link;
+import com.example.urlshortener.model.Redirect;
 import com.example.urlshortener.model.User;
 import com.example.urlshortener.repository.LinkRepository;
 import com.example.urlshortener.repository.RedirectRepository;
 import com.example.urlshortener.repository.UserRepository;
 import com.example.urlshortener.util.LinkUtil;
 import com.example.urlshortener.util.TokenUtil;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -19,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -55,13 +58,14 @@ public class LinkController {
     this.tokenUtil = new TokenUtil();
   }
 
+  @Operation(summary = "Создание короткой ссылки")
   @PostMapping
   @ResponseStatus(HttpStatus.CREATED)
-  public ResponseEntity<?> createShortLink(@Parameter(hidden = true) @RequestHeader(value = "Authorization") String token,
+  public ResponseEntity<?> createShortUrl(@Parameter(hidden = true) @RequestHeader(value = "Authorization") String token,
                               @RequestParam Integer userId,
                               @RequestParam String originalUrl,
                               @RequestParam(required = false)
-                              @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDateTime createdTo) {
+                              @DateTimeFormat(iso = ISO.DATE_TIME) LocalDateTime createdTo) {
     User user = userRepository.get(userId);
     if (user == null) {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -85,13 +89,14 @@ public class LinkController {
       e.printStackTrace();
     }
     logger.info(originalUrl);
-    Link created = new Link(null, shortUrl, originalUrl, createdTo, 0);
+    Link created = new Link(originalUrl, shortUrl, createdTo);
     linkRepository.save(created, userId);
     URI uriOfNewResource = ServletUriComponentsBuilder.fromCurrentContextPath()
         .path(REST_URL).build().toUri();
     return ResponseEntity.created(uriOfNewResource).body(created);
   }
 
+  @Operation(summary = "Переход по короткой ссылке")
   @GetMapping
   public ResponseEntity<?> redirect(@Parameter(hidden = true)@RequestHeader(value = "Authorization", required = false) String token,
                                           @RequestParam Integer userId,
@@ -110,14 +115,21 @@ public class LinkController {
     }
     Link link = linkRepository.getByShortLink(shortUrl, userId);
     if (link != null) {
+      if (link.getCreatedTo() != null && link.getCreatedTo().isBefore(LocalDateTime.now())) {
+        linkRepository.deleteByShortLink(shortUrl, userId);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+      }
       HttpHeaders headers = new HttpHeaders();
       headers.add("Location", link.getOriginalUrl());
+      Redirect redirect = new Redirect(link.getOriginalUrl(), userId);
+      redirectRepository.save(redirect);
       return new ResponseEntity<String>(headers, HttpStatus.FOUND);
     } else {
       return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
   }
 
+  @Operation(summary = "Удаление короткой ссылки")
   @DeleteMapping
   @ResponseStatus(HttpStatus.NO_CONTENT)
   public ResponseEntity<?> deleteLink(@Parameter(hidden = true)@RequestHeader(value = "Authorization", required = false) String token,
@@ -141,8 +153,9 @@ public class LinkController {
     return new ResponseEntity<>(HttpStatus.NO_CONTENT);
   }
 
-  @GetMapping("/links")
-  public ResponseEntity<?> getAllLinks(@Parameter(hidden = true)@RequestHeader(value = "Authorization", required = false) String token,
+  @Operation(summary = "Получение списка всех переходов")
+  @GetMapping("/redirects")
+  public ResponseEntity<?> getAllRedirects(@Parameter(hidden = true)@RequestHeader(value = "Authorization", required = false) String token,
       @RequestParam Integer userId) {
     User user = userRepository.get(userId);
     if (user == null) {
@@ -155,9 +168,10 @@ public class LinkController {
     if (token == null || !token.equals(createdToken)) {
       return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     }
-    return ResponseEntity.ok(linkRepository.getAll(userId));
+    return ResponseEntity.ok(redirectRepository.getAll());
   }
 
+  @Operation(summary = "Получение количества переходов по ссылке")
   @GetMapping("/count")
   public ResponseEntity<?> getCountRedirect(@Parameter(hidden = true)@RequestHeader(value = "Authorization", required = false) String token,
       @RequestParam Integer userId,
@@ -177,6 +191,7 @@ public class LinkController {
     return ResponseEntity.ok(redirectRepository.getCountRedirect(originalUrl));
   }
 
+  @Operation(summary = "Получение количества уникальных переходов по ссылке")
   @GetMapping("/uniqueCount")
   public ResponseEntity<?> getUniqueCountRedirect(@Parameter(hidden = true)@RequestHeader(value = "Authorization", required = false) String token,
       @RequestParam Integer userId,
